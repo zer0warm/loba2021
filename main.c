@@ -25,7 +25,7 @@ void storage_exchange(int clientfd, int storefd, char *buf, int bufsz)
 
 int main(int argc, char *argv[])
 {
-    if (argc != 4) {
+    if (argc != 3) {
         fprintf(stderr, "Usage: %s auth storage\n", argv[0]);
         exit(255);
     }
