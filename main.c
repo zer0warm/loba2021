@@ -16,11 +16,29 @@ void auth_exchange(int clientfd, int authfd, char *buf, int bufsz)
 
 void storage_exchange(int clientfd, int storefd, char *buf, int bufsz)
 {
-    recv_wrapper(clientfd, buf, bufsz, "lb-recv-cmd");
-    send_wrapper(storefd, buf, "lb-send-cmd");
+    while (1) {
+        // Always send 1
+        recv_wrapper(clientfd, buf, bufsz, "lb-recv-cmd");
+        send_wrapper(storefd, buf, "lb-send-cmd");
 
-    recv_wrapper(storefd, buf, bufsz, "lb-recv-resp");
-    send_wrapper(clientfd, buf, "lb-send-resp");
+        char *result = strstr(buf, "send");
+
+        if (result && (result - buf == 0)) {
+            // Send 2 more if the file is being sent
+            recv_wrapper(storefd, buf, bufsz, "lb-recv-resp");
+            send_wrapper(clientfd, buf, "lb-send-resp");
+
+            recv_wrapper(storefd, buf, bufsz, "lb-recv-resp");
+            send_wrapper(clientfd, buf, "lb-send-resp");
+        } else {
+            // But receive 2 if the file is being received
+            recv_wrapper(storefd, buf, bufsz, "lb-recv-resp");
+            send_wrapper(clientfd, buf, "lb-send-resp");
+
+            recv_wrapper(storefd, buf, bufsz, "lb-recv-resp");
+            send_wrapper(clientfd, buf, "lb-send-resp");
+        }
+    }
 }
 
 int main(int argc, char *argv[])
