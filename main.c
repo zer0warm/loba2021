@@ -26,7 +26,7 @@ void storage_exchange(int clientfd, int storefd, char *buf, int bufsz)
 int main(int argc, char *argv[])
 {
     if (argc != 4) {
-        fprintf(stderr, "Usage: %s server auth\n", argv[0]);
+        fprintf(stderr, "Usage: %s auth storage\n", argv[0]);
         exit(255);
     }
 
@@ -35,12 +35,12 @@ int main(int argc, char *argv[])
 
     while (1) {
         int clientfd = accept_connection(sockfd, BLOCK);
-        int authfd = make_client(argv[2], 8001, BLOCK);
+        int authfd = make_client(argv[1], 8001, BLOCK);
 
         auth_exchange(clientfd, authfd, buffer, sizeof(buffer));
         close(authfd);
 
-        int storefd = make_client(argv[3], 8002, BLOCK);
+        int storefd = make_client(argv[2], 8002, BLOCK);
 
         while (1) {
             storage_exchange(clientfd, storefd, buffer, sizeof(buffer));
