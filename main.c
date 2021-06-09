@@ -5,13 +5,19 @@
 
 #include "util.h"
 
-void auth_exchange(int clientfd, int authfd, char *buf, int bufsz)
+int  auth_exchange(int clientfd, int authfd, char *buf, int bufsz)
 {
     recv_wrapper(clientfd, buf, bufsz, "lb-recv-creds");
     send_wrapper(authfd, buf, "lb-send-creds");
 
     recv_wrapper(authfd, buf, bufsz, "lb-recv-auth-status");
     send_wrapper(clientfd, buf, "lb-send-auth-status");
+
+    if (strcmp(buf, "invalid") == 0) {
+        return 0;
+    }
+
+    return 1;
 }
 
 void storage_exchange(int clientfd, int storefd, char *buf, int bufsz)
@@ -55,16 +61,21 @@ int main(int argc, char *argv[])
         int clientfd = accept_connection(sockfd, BLOCK);
         int authfd = make_client(argv[1], 8001, BLOCK);
 
-        auth_exchange(clientfd, authfd, buffer, sizeof(buffer));
+        int valid = auth_exchange(clientfd, authfd, buffer, sizeof(buffer));
         close(authfd);
 
-        int storefd = make_client(argv[2], 8002, BLOCK);
+        if (valid) {
+            int storefd = make_client(argv[2], 8002, BLOCK);
 
-        while (1) {
-            storage_exchange(clientfd, storefd, buffer, sizeof(buffer));
+            while (1) {
+                storage_exchange(clientfd, storefd, buffer, sizeof(buffer));
+            }
+
+            close(storefd);
+        } else {
+            fprintf(stderr, "Invalid authentication. Connection rejected.\n");
         }
 
-        close(storefd);
         close(clientfd);
     }
 
